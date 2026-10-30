@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>音声日記帳 - Voice Diary</title>
+    <title>日記 - Voice & Text Diary</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -28,9 +28,9 @@
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 py-3 flex items-center justify-between shadow-sm">
         <div class="flex items-center space-x-2">
             <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-md">
-                <i class="fa-solid fa-microphone-lines text-lg"></i>
+                <i class="fa-solid fa-book text-lg"></i>
             </div>
-            <h1 class="font-bold text-lg text-slate-800 tracking-wide">こえ日記</h1>
+            <h1 class="font-bold text-lg text-slate-800 tracking-wide">日記</h1>
         </div>
         <div class="flex items-center space-x-2">
             <button onclick="toggleFullScreen()" class="p-2 text-slate-600 hover:text-indigo-600 rounded-lg hover:bg-slate-100 transition" title="全画面切り替え">
@@ -92,11 +92,11 @@
     <div class="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white/90 to-transparent pt-4 pb-6 px-4 z-20 flex justify-center">
         <button onclick="openModalForToday()" class="max-w-md w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg flex items-center justify-center space-x-2 transition transform active:scale-95">
             <i class="fa-solid fa-microphone text-lg"></i>
-            <span>きょうの日記を録音する</span>
+            <span>きょうの日記を書く・録音する</span>
         </button>
     </div>
 
-    <!-- 新規作成・編集モーダル（音声 / 文字完全分離型） -->
+    <!-- 新規作成・編集モーダル -->
     <div id="diaryModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl shadow-xl max-h-[90vh] flex flex-col overflow-hidden animate-slide-up">
             
@@ -143,7 +143,7 @@
                     </div>
                 </div>
 
-                <!-- 【文字入力モード画面】（音声認識は完全に動きません） -->
+                <!-- 【文字入力モード画面】 -->
                 <div id="textModeSection" class="space-y-3 hidden">
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">タイトル</label>
@@ -158,23 +158,28 @@
                     </button>
                 </div>
 
-                <!-- 保存済み詳細表示セクション（すでに日記がある場合） -->
+                <!-- 保存済み詳細・編集表示セクション（すでに日記がある場合） -->
                 <div id="savedDiaryDetail" class="space-y-4 pt-2 border-t border-slate-100 hidden">
-                    <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200">
-                        <h4 id="detailTitle" class="font-bold text-slate-800 text-base mb-1">タイトル</h4>
-                        <p id="detailSummary" class="text-sm text-slate-600 leading-relaxed mb-3">要約テキスト</p>
-                        <div class="flex items-center justify-between text-xs text-slate-400">
-                            <span id="detailTime">時刻</span>
-                            <button onclick="playVoiceSummary()" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-bold px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5">
-                                <i class="fa-solid fa-volume-high"></i>
-                                <span>声で聴く</span>
-                            </button>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">タイトル（編集可能）</label>
+                            <input type="text" id="editDetailTitle" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-800 focus:outline-none focus:border-indigo-500 bg-white">
                         </div>
-                    </div>
-                    <div>
-                        <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">原文・詳細</h5>
-                        <div id="detailTranscript" class="text-xs text-slate-600 bg-white p-3 rounded-xl border border-slate-200 max-h-36 overflow-y-auto">
-                            原文テキスト
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">日記の内容</label>
+                            <textarea id="editDetailContent" rows="4" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600 focus:outline-none focus:border-indigo-500 bg-white leading-relaxed"></textarea>
+                        </div>
+                        <div class="flex items-center justify-between pt-1">
+                            <span id="detailTime" class="text-xs text-slate-400">時刻</span>
+                            <div class="flex space-x-2">
+                                <button onclick="playVoiceSummary()" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-bold px-3 py-1.5 rounded-lg transition text-xs flex items-center space-x-1.5">
+                                    <i class="fa-solid fa-volume-high"></i>
+                                    <span>声で聴く</span>
+                                </button>
+                                <button onclick="updateExistingDiary()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-1.5 rounded-lg transition text-xs shadow">
+                                    <i class="fa-solid fa-check mr-1"></i>変更を保存
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -209,9 +214,17 @@
 
     <script>
         let diaries = JSON.parse(localStorage.getItem('voice_diaries') || '[]');
+        
+        // データのクレンジング（undefinedタイトルの自動修正）
+        diaries = diaries.map(d => ({
+            ...d,
+            title: (!d.title || d.title === 'undefined' || d.title === 'undefined...') ? (d.summary ? d.summary.slice(0, 15) + '...' : '日記') : d.title
+        }));
+        localStorage.setItem('voice_diaries', JSON.stringify(diaries));
+
         let currentDate = new Date();
         let selectedDateStr = formatDateKey(new Date());
-        let currentInputMode = 'voice'; // 'voice' or 'text'
+        let currentInputMode = 'voice';
         
         let isRecording = false;
         let recognition = null;
@@ -224,7 +237,6 @@
             return `${y}-${m}-${d}`;
         }
 
-        // 音声認識の初期化（音声モードの時だけ起動）
         function initSpeechRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) return;
@@ -294,296 +306,4 @@
 
         function switchInputMode(mode) {
             currentInputMode = mode;
-            const tabVoice = document.getElementById('tabVoice');
-            const tabText = document.getElementById('tabText');
-            const voiceSec = document.getElementById('voiceModeSection');
-            const textSec = document.getElementById('textModeSection');
-
-            if (isRecording) {
-                isRecording = false;
-                if (recognition) {
-                    try { recognition.stop(); } catch(e){}
-                }
-                const btn = document.getElementById('recordBtn');
-                if (btn) {
-                    btn.classList.replace('bg-amber-500', 'bg-red-500');
-                    btn.innerHTML = '<i class="fa-solid fa-microphone text-2xl"></i>';
-                }
-            }
-
-            if (mode === 'voice') {
-                tabVoice.className = "py-2 text-xs font-bold rounded-lg transition bg-white text-indigo-600 shadow-sm";
-                tabText.className = "py-2 text-xs font-bold rounded-lg transition text-slate-600 hover:text-slate-900";
-                voiceSec.classList.remove('hidden');
-                textSec.classList.add('hidden');
-            } else {
-                tabText.className = "py-2 text-xs font-bold rounded-lg transition bg-white text-indigo-600 shadow-sm";
-                tabVoice.className = "py-2 text-xs font-bold rounded-lg transition text-slate-600 hover:text-slate-900";
-                textSec.classList.remove('hidden');
-                voiceSec.classList.add('hidden');
-            }
-        }
-
-        function openModalForDate(dateStr) {
-            selectedDateStr = dateStr;
-            document.getElementById('modalDateTitle').innerText = dateStr;
-            
-            const existing = diaries.find(d => d.date === dateStr);
-            const detailSec = document.getElementById('savedDiaryDetail');
-            const voiceSec = document.getElementById('voiceModeSection');
-            const textSec = document.getElementById('textModeSection');
-            const tabContainer = document.getElementById('modalTabContainer');
-
-            if (existing) {
-                tabContainer.classList.add('hidden');
-                voiceSec.classList.add('hidden');
-                textSec.classList.add('hidden');
-                detailSec.classList.remove('hidden');
-
-                document.getElementById('detailTitle').innerText = existing.title;
-                document.getElementById('detailSummary').innerText = existing.summary;
-                document.getElementById('detailTime').innerText = existing.time || '';
-                document.getElementById('detailTranscript').innerText = existing.transcript;
-                document.getElementById('modalCategoryBadge').innerText = existing.category || '日常';
-            } else {
-                tabContainer.classList.remove('hidden');
-                detailSec.classList.add('hidden');
-                switchInputMode('voice');
-                document.getElementById('liveTranscript').innerText = 'ここに話した内容がリアルタイムで表示されます...';
-                document.getElementById('manualTitle').value = '';
-                document.getElementById('manualContent').value = '';
-                document.getElementById('modalCategoryBadge').innerText = '新規';
-            }
-
-            document.getElementById('diaryModal').classList.remove('hidden');
-        }
-
-        function openModalForToday() {
-            openModalForDate(formatDateKey(new Date()));
-        }
-
-        function closeModal() {
-            if (isRecording) {
-                isRecording = false;
-                if (recognition) {
-                    try { recognition.stop(); } catch(e){}
-                }
-            }
-            document.getElementById('diaryModal').classList.add('hidden');
-        }
-
-        function saveVoiceDiary() {
-            const transcript = document.getElementById('liveTranscript').innerText;
-            if (!transcript || transcript.includes('ここに話した内容')) {
-                alert('音声が入力されていません。');
-                return;
-            }
-
-            const newDiary = {
-                id: Date.now(),
-                date: selectedDateStr,
-                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                title: transcript.slice(0, 15) + '...',
-                summary: transcript,
-                transcript: transcript,
-                category: '音声記録'
-            };
-
-            diaries = diaries.filter(d => d.date !== selectedDateStr);
-            diaries.unshift(newDiary);
-            localStorage.setItem('voice_diaries', JSON.stringify(diaries));
-
-            closeModal();
-            renderCalendar();
-            renderDiaries();
-        }
-
-        function saveManualDiary() {
-            const title = document.getElementById('manualTitle').value.trim();
-            const content = document.getElementById('manualContent').value.trim();
-
-            if (!title && !content) {
-                alert('タイトルまたは内容を入力してください。');
-                return;
-            }
-
-            const newDiary = {
-                id: Date.now(),
-                date: selectedDateStr,
-                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                title: title || '文字入力の日記',
-                summary: content,
-                transcript: content,
-                category: '文字入力'
-            };
-
-            diaries = diaries.filter(d => d.date !== selectedDateStr);
-            diaries.unshift(newDiary);
-            localStorage.setItem('voice_diaries', JSON.stringify(diaries));
-
-            closeModal();
-            renderCalendar();
-            renderDiaries();
-        }
-
-        let currentFilterDate = null;
-
-        function renderCalendar() {
-            const titleEl = document.getElementById('calendarMonthTitle');
-            const gridEl = document.getElementById('calendarGrid');
-            gridEl.innerHTML = '';
-
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            titleEl.innerText = `${year}年 ${month + 1}月`;
-
-            const firstDayIndex = new Date(year, month, 1).getDay();
-            const lastDay = new Date(year, month + 1, 0).getDate();
-
-            for (let i = 0; i < firstDayIndex; i++) {
-                gridEl.appendChild(document.createElement('div'));
-            }
-
-            for (let day = 1; day <= lastDay; day++) {
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = `h-9 w-9 mx-auto rounded-xl flex flex-col items-center justify-center text-xs font-bold transition relative ${dateStr === selectedDateStr ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}`;
-                
-                const span = document.createElement('span');
-                span.innerText = day;
-                btn.appendChild(span);
-
-                if (diaries.some(d => d.date === dateStr)) {
-                    const dot = document.createElement('span');
-                    dot.className = `absolute bottom-1 w-1 h-1 rounded-full ${dateStr === selectedDateStr ? 'bg-white' : 'bg-indigo-600'}`;
-                    btn.appendChild(dot);
-                }
-
-                btn.onclick = () => {
-                    currentFilterDate = dateStr;
-                    selectedDateStr = dateStr;
-                    document.getElementById('filterStatus').classList.remove('flex');
-                    document.getElementById('filterStatus').classList.remove('hidden');
-                    document.getElementById('filterStatus').style.display = 'flex';
-                    document.getElementById('filterStatusText').innerText = `${dateStr} の日記`;
-                    renderCalendar();
-                    renderDiaries();
-                };
-
-                gridEl.appendChild(btn);
-            }
-        }
-
-        function clearDateFilter() {
-            currentFilterDate = null;
-            document.getElementById('filterStatus').style.display = 'none';
-            renderCalendar();
-            renderDiaries();
-        }
-
-        function changeMonth(direction) {
-            currentDate.setMonth(currentDate.getMonth() + direction);
-            renderCalendar();
-        }
-
-        function renderDiaries() {
-            const container = document.getElementById('diariesContainer');
-            container.innerHTML = '';
-
-            let filtered = diaries;
-            if (currentFilterDate) {
-                filtered = diaries.filter(d => d.date === currentFilterDate);
-            }
-
-            document.getElementById('diaryCount').innerText = `${filtered.length}件`;
-
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-10 bg-white rounded-2xl border border-slate-200">
-                        <i class="fa-solid fa-book text-slate-300 text-3xl mb-2"></i>
-                        <p class="text-xs text-slate-400">表示する日記がありません</p>
-                    </div>
-                `;
-                return;
-            }
-
-            filtered.forEach(d => {
-                const card = document.createElement('div');
-                card.className = 'bg-white rounded-2xl p-4 border border-slate-200 shadow-sm hover:border-indigo-200 transition cursor-pointer';
-                card.onclick = () => openModalForDate(d.date);
-                card.innerHTML = `
-                    <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-xs font-bold text-indigo-600">${d.date}</span>
-                        <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-medium">${d.category || '日常'}</span>
-                    </div>
-                    <h4 class="font-bold text-slate-800 text-sm mb-1">${d.title}</h4>
-                    <p class="text-xs text-slate-600 line-clamp-2">${d.summary}</p>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function playVoiceSummary() {
-            const text = document.getElementById('detailSummary').innerText;
-            if (!text) return;
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'ja-JP';
-            window.speechSynthesis.speak(utterance);
-        }
-
-        function toggleFullScreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(() => {});
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
-            }
-        }
-
-        function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(diaries, null, 2));
-            const dlAnchor = document.createElement('a');
-            dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", `voice_diary_backup_${formatDateKey(new Date())}.json`);
-            document.body.appendChild(dlAnchor);
-            dlAnchor.click();
-            dlAnchor.remove();
-        }
-
-        function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const imported = JSON.parse(e.target.result);
-                    if (Array.isArray(imported)) {
-                        diaries = imported;
-                        localStorage.setItem('voice_diaries', JSON.stringify(diaries));
-                        renderCalendar();
-                        renderDiaries();
-                        alert('日記データを正常に復元しました！');
-                    }
-                } catch (err) {
-                    alert('ファイルの読み込みに失敗しました。');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function showHelpModal() {
-            document.getElementById('helpModal').classList.remove('hidden');
-        }
-        function closeHelpModal() {
-            document.getElementById('helpModal').classList.add('hidden');
-        }
-
-        // 初期化実行
-        renderCalendar();
-        renderDiaries();
-    </script>
-</body>
-</html>
+            const
