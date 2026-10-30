@@ -30,7 +30,6 @@
             <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-md">
                 <i class="fa-solid fa-book text-lg"></i>
             </div>
-            <!-- 「こえ」を削除して「日記」のみに修正 -->
             <h1 class="font-bold text-lg text-slate-800 tracking-wide">日記</h1>
         </div>
         <div class="flex items-center space-x-2">
@@ -68,7 +67,7 @@
             </div>
             <!-- カレンダーの日付グリッド -->
             <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-center text-sm">
-                <!-- JavaScriptで動的生成 -->
+                <!-- JavaScriptで動적生成 -->
             </div>
             <div id="filterStatus" class="mt-3 hidden items-center justify-between bg-indigo-50 px-3 py-1.5 rounded-xl text-xs text-indigo-700 font-medium">
                 <span id="filterStatusText">日付で絞り込み中</span>
@@ -216,21 +215,11 @@
     <script>
         let diaries = JSON.parse(localStorage.getItem('voice_diaries') || '[]');
         
-        // データのクレンジング（undefinedや空のタイトルを自動修復）
-        diaries = diaries.map(d => {
-            let fixedTitle = d.title;
-            if (!fixedTitle || fixedTitle === 'undefined' || fixedTitle === 'undefined...') {
-                if (d.summary) {
-                    fixedTitle = d.summary.slice(0, 15) + '...';
-                } else {
-                    fixedTitle = '日記';
-                }
-            }
-            return {
-                ...d,
-                title: fixedTitle
-            };
-        });
+        // データのクレンジング（undefinedタイトルの自動修正）
+        diaries = diaries.map(d => ({
+            ...d,
+            title: (!d.title || d.title === 'undefined' || d.title === 'undefined...') ? (d.summary ? d.summary.slice(0, 15) + '...' : '日記') : d.title
+        }));
         localStorage.setItem('voice_diaries', JSON.stringify(diaries));
 
         let currentDate = new Date();
@@ -363,7 +352,7 @@
                 textSec.classList.add('hidden');
                 detailSec.classList.remove('hidden');
 
-                document.getElementById('editDetailTitle').value = (existing.title && existing.title !== 'undefined') ? existing.title : '';
+                document.getElementById('editDetailTitle').value = existing.title || '';
                 document.getElementById('editDetailContent').value = existing.summary || '';
                 document.getElementById('detailTime').innerText = existing.time || '';
                 document.getElementById('modalCategoryBadge').innerText = existing.category || '日常';
@@ -448,13 +437,14 @@
             renderDiaries();
         }
 
+        // 既存日記の編集保存
         function updateExistingDiary() {
             const newTitle = document.getElementById('editDetailTitle').value.trim();
             const newContent = document.getElementById('editDetailContent').value.trim();
 
             const target = diaries.find(d => d.date === selectedDateStr);
             if (target) {
-                target.title = newTitle || (newContent ? newContent.slice(0, 15) + '...' : '日記');
+                target.title = newTitle || '日記';
                 target.summary = newContent;
                 target.transcript = newContent;
                 localStorage.setItem('voice_diaries', JSON.stringify(diaries));
@@ -549,18 +539,12 @@
                 const card = document.createElement('div');
                 card.className = 'bg-white rounded-2xl p-4 border border-slate-200 shadow-sm hover:border-indigo-200 transition cursor-pointer';
                 card.onclick = () => openModalForDate(d.date);
-                
-                let displayTitle = d.title;
-                if (!displayTitle || displayTitle === 'undefined' || displayTitle === 'undefined...') {
-                    displayTitle = d.summary ? d.summary.slice(0, 15) + '...' : '日記';
-                }
-
                 card.innerHTML = `
                     <div class="flex items-center justify-between mb-1.5">
                         <span class="text-xs font-bold text-indigo-600">${d.date}</span>
                         <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-medium">${d.category || '日常'}</span>
                     </div>
-                    <h4 class="font-bold text-slate-800 text-sm mb-1">${displayTitle}</h4>
+                    <h4 class="font-bold text-slate-800 text-sm mb-1">${d.title || '無題の日記'}</h4>
                     <p class="text-xs text-slate-600 line-clamp-2">${d.summary || ''}</p>
                 `;
                 container.appendChild(card);
