@@ -30,7 +30,6 @@
             <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-md">
                 <i class="fa-solid fa-book text-lg"></i>
             </div>
-            <!-- 「こえ」を削除して「日記」のみに修正 -->
             <h1 class="font-bold text-lg text-slate-800 tracking-wide">日記</h1>
         </div>
         <div class="flex items-center space-x-2">
@@ -216,7 +215,7 @@
     <script>
         let diaries = JSON.parse(localStorage.getItem('voice_diaries') || '[]');
         
-        // データのクレンジング（undefinedや空のタイトルを自動修復）
+        // データのクレンジング
         diaries = diaries.map(d => {
             let fixedTitle = d.title;
             if (!fixedTitle || fixedTitle === 'undefined' || fixedTitle === 'undefined...') {
@@ -334,4 +333,74 @@
                 }
             }
 
-            if (mode
+            if (mode === 'voice') {
+                tabVoice.className = "py-2 text-xs font-bold rounded-lg transition bg-white text-indigo-600 shadow-sm";
+                tabText.className = "py-2 text-xs font-bold rounded-lg transition text-slate-600 hover:text-slate-900";
+                voiceSec.classList.remove('hidden');
+                textSec.classList.add('hidden');
+            } else {
+                tabText.className = "py-2 text-xs font-bold rounded-lg transition bg-white text-indigo-600 shadow-sm";
+                tabVoice.className = "py-2 text-xs font-bold rounded-lg transition text-slate-600 hover:text-slate-900";
+                textSec.classList.remove('hidden');
+                voiceSec.classList.add('hidden');
+            }
+        }
+
+        function openModalForDate(dateStr) {
+            selectedDateStr = dateStr;
+            document.getElementById('modalDateTitle').innerText = dateStr;
+            
+            const existing = diaries.find(d => d.date === dateStr);
+            const detailSec = document.getElementById('savedDiaryDetail');
+            const voiceSec = document.getElementById('voiceModeSection');
+            const textSec = document.getElementById('textModeSection');
+            const tabContainer = document.getElementById('modalTabContainer');
+
+            if (existing) {
+                tabContainer.classList.add('hidden');
+                voiceSec.classList.add('hidden');
+                textSec.classList.add('hidden');
+                detailSec.classList.remove('hidden');
+
+                document.getElementById('editDetailTitle').value = (existing.title && existing.title !== 'undefined') ? existing.title : '';
+                document.getElementById('editDetailContent').value = existing.summary || '';
+                document.getElementById('detailTime').innerText = existing.time || '';
+                document.getElementById('modalCategoryBadge').innerText = existing.category || '日常';
+            } else {
+                tabContainer.classList.remove('hidden');
+                detailSec.classList.add('hidden');
+                switchInputMode('voice');
+                document.getElementById('liveTranscript').innerText = 'ここに話した内容がリアルタイムで表示されます...';
+                document.getElementById('manualTitle').value = '';
+                document.getElementById('manualContent').value = '';
+                document.getElementById('modalCategoryBadge').innerText = '新規';
+            }
+
+            document.getElementById('diaryModal').classList.remove('hidden');
+        }
+
+        function openModalForToday() {
+            openModalForDate(formatDateKey(new Date()));
+        }
+
+        function closeModal() {
+            if (isRecording) {
+                isRecording = false;
+                if (recognition) {
+                    try { recognition.stop(); } catch(e){}
+                }
+            }
+            document.getElementById('diaryModal').classList.add('hidden');
+        }
+
+        function saveVoiceDiary() {
+            const transcript = document.getElementById('liveTranscript').innerText;
+            if (!transcript || transcript.includes('ここに話した内容')) {
+                alert('音声が入力されていません。');
+                return;
+            }
+
+            const newDiary = {
+                id: Date.now(),
+                date: selectedDateStr,
+                time: new Date().toLocaleTimeString([], {hour: '2-digit
