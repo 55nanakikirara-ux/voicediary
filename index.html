@@ -30,6 +30,7 @@
             <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-md">
                 <i class="fa-solid fa-book text-lg"></i>
             </div>
+            <!-- 「こえ」を削除して「日記」のみに修正 -->
             <h1 class="font-bold text-lg text-slate-800 tracking-wide">日記</h1>
         </div>
         <div class="flex items-center space-x-2">
@@ -215,11 +216,21 @@
     <script>
         let diaries = JSON.parse(localStorage.getItem('voice_diaries') || '[]');
         
-        // データのクレンジング（undefinedタイトルの自動修正）
-        diaries = diaries.map(d => ({
-            ...d,
-            title: (!d.title || d.title === 'undefined' || d.title === 'undefined...') ? (d.summary ? d.summary.slice(0, 15) + '...' : '日記') : d.title
-        }));
+        // データのクレンジング（undefinedや空のタイトルを自動修復）
+        diaries = diaries.map(d => {
+            let fixedTitle = d.title;
+            if (!fixedTitle || fixedTitle === 'undefined' || fixedTitle === 'undefined...') {
+                if (d.summary) {
+                    fixedTitle = d.summary.slice(0, 15) + '...';
+                } else {
+                    fixedTitle = '日記';
+                }
+            }
+            return {
+                ...d,
+                title: fixedTitle
+            };
+        });
         localStorage.setItem('voice_diaries', JSON.stringify(diaries));
 
         let currentDate = new Date();
@@ -306,4 +317,21 @@
 
         function switchInputMode(mode) {
             currentInputMode = mode;
-            const
+            const tabVoice = document.getElementById('tabVoice');
+            const tabText = document.getElementById('tabText');
+            const voiceSec = document.getElementById('voiceModeSection');
+            const textSec = document.getElementById('textModeSection');
+
+            if (isRecording) {
+                isRecording = false;
+                if (recognition) {
+                    try { recognition.stop(); } catch(e){}
+                }
+                const btn = document.getElementById('recordBtn');
+                if (btn) {
+                    btn.classList.replace('bg-amber-500', 'bg-red-500');
+                    btn.innerHTML = '<i class="fa-solid fa-microphone text-2xl"></i>';
+                }
+            }
+
+            if (mode
