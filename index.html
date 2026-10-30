@@ -115,7 +115,7 @@
             <div class="p-5 overflow-y-auto space-y-4 flex-1">
                 
                 <!-- 入力モード切替タブ -->
-                <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
+                <div id="modalTabContainer" class="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
                     <button type="button" id="tabVoice" onclick="switchInputMode('voice')" class="py-2 text-xs font-bold rounded-lg transition bg-white text-indigo-600 shadow-sm">
                         <i class="fa-solid fa-microphone mr-1"></i>音声で入力
                     </button>
@@ -221,7 +221,231 @@
             const y = date.getFullYear();
             const m = String(date.getMonth() + 1).padStart(2, '0');
             const d = String(date.getDate()).padStart(2, '0');
-            return `${y}-${m}-${d}`; }  // 音声認識の初期化（音声モードの時だけ起動） function initSpeechRecognition() { const SpeechRecognition = window.SpeechRecognition \vert{}\vert{} window.webkitSpeechRecognition; if (!SpeechRecognition) return;  if (recognition) { try { recognition.abort(); } catch(e){} }  recognition = new SpeechRecognition(); recognition.lang = 'ja-JP'; recognition.interimResults = true; recognition.continuous = true;  recognition.onresult = (event) => { // 文字入力モードの時は絶対に音声を反映させない if (currentInputMode !== 'voice' \vert{}\vert{} !isRecording) return;  let interim = ''; for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) { finalTranscript += event.results[i][0].transcript + ' '; } else { interim += event.results[i][0].transcript; } } const liveEl = document.getElementById('liveTranscript'); if (liveEl) { liveEl.innerText = finalTranscript + interim; } };  recognition.onerror = () => {}; recognition.onend = () => { if (isRecording && currentInputMode === 'voice') { try { recognition.start(); } catch(e){} } }; }  function toggleRecording() { if (currentInputMode !== 'voice') return;  const btn = document.getElementById('recordBtn'); const statusText = document.getElementById('recordingStatusText');  if (!isRecording) { finalTranscript = document.getElementById('liveTranscript').innerText; if (finalTranscript.includes('ここに話した内容')) finalTranscript = '';  initSpeechRecognition(); try { recognition.start(); isRecording = true; btn.classList.replace('bg-red-500', 'bg-amber-500'); btn.innerHTML = '<i class="fa-solid fa-stop text-2xl"></i>'; statusText.innerText = '録音中...（もう一度押すと一時停止）'; } catch(e) {} } else { isRecording = false; if (recognition) { try { recognition.stop(); } catch(e){} } btn.classList.replace('bg-amber-500', 'bg-red-500'); btn.innerHTML = '<i class="fa-solid fa-microphone text-2xl"></i>'; statusText.innerText = '録音を一時停止しました（完了を押して保存できます）'; } }  function switchInputMode(mode) { currentInputMode = mode; const tabVoice = document.getElementById('tabVoice'); const tabText = document.getElementById('tabText'); const voiceSec = document.getElementById('voiceModeSection'); const textSec = document.getElementById('textModeSection');  // モード切替時は必ず録音をストップする if (isRecording) { isRecording = false; if (recognition) { try { recognition.stop(); } catch(e){} } const btn = document.getElementById('recordBtn'); if (btn) { btn.classList.replace('bg-amber-500', 'bg-red-500'); btn.innerHTML = '<i class="fa-solid fa-microphone text-2xl"></i>'; } }  if (mode === 'voice') { tabVoice.className = "py-2 text-xs font-bold rounded-lg transition bg-white text-indigo-600 shadow-sm"; tabText.className = "py-2 text-xs font-bold rounded-lg transition text-slate-600 hover:text-slate-900"; voiceSec.classList.remove('hidden'); textSec.classList.add('hidden'); } else { tabText.className = "py-2 text-xs font-bold rounded-lg transition bg-white text-indigo-600 shadow-sm"; tabVoice.className = "py-2 text-xs font-bold rounded-lg transition text-slate-600 hover:text-slate-900"; textSec.classList.remove('hidden'); voiceSec.classList.add('hidden'); } }  function openModalForDate(dateStr) { selectedDateStr = dateStr; document.getElementById('modalDateTitle').innerText = dateStr;  // 既存の日記があるか確認 const existing = diaries.find(d => d.date === dateStr); const detailSec = document.getElementById('savedDiaryDetail'); const voiceSec = document.getElementById('voiceModeSection'); const textSec = document.getElementById('textModeSection'); const tabContainer = document.querySelector('.grid.grid-cols-2');  if (existing) { // すでに日記がある場合は詳細を表示 tabContainer.classList.add('hidden'); voiceSec.classList.add('hidden'); textSec.classList.add('hidden'); detailSec.classList.remove('hidden');  document.getElementById('detailTitle').innerText = existing.title; document.getElementById('detailSummary').innerText = existing.summary; document.getElementById('detailTime').innerText = existing.time \vert{}\vert{} ''; document.getElementById('detailTranscript').innerText = existing.transcript; document.getElementById('modalCategoryBadge').innerText = existing.category \vert{}\vert{} '日常'; } else { // 新規作成の場合 tabContainer.classList.remove('hidden'); detailSec.classList.add('hidden'); switchInputMode('voice'); // デフォルトは音声モード document.getElementById('liveTranscript').innerText = 'ここに話した内容がリアルタイムで表示されます...'; document.getElementById('manualTitle').value = ''; document.getElementById('manualContent').value = ''; document.getElementById('modalCategoryBadge').innerText = '日常'; }  document.getElementById('diaryModal').classList.remove('hidden'); }  function openModalForToday() { openModalForDate(formatDateKey(new Date())); }  function closeModal() { if (isRecording) { isRecording = false; if (recognition) { try { recognition.stop(); } catch(e){} } } document.getElementById('diaryModal').classList.add('hidden'); }  function saveVoiceDiary() { const transcript = document.getElementById('liveTranscript').innerText; if (!transcript \vert{}\vert{} transcript.includes('ここに話した内容')) { alert('音声が入力されていません。'); return; }  const newDiary = { id: Date.now(), date: selectedDateStr, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), title: transcript.slice(0, 15) + '...', summary: transcript, transcript: transcript, category: '音声記録' };  // 既存の日記があれば上書き、なければ追加 diaries = diaries.filter(d => d.date !== selectedDateStr); diaries.unshift(newDiary); localStorage.setItem('voice_diaries', JSON.stringify(diaries));  closeModal(); renderCalendar(); renderDiaries(); }  function saveManualDiary() { const title = document.getElementById('manualTitle').value.trim(); const content = document.getElementById('manualContent').value.trim();  if (!title && !content) { alert('タイトルまたは内容を入力してください。'); return; }  const newDiary = { id: Date.now(), date: selectedDateStr, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), title: title \vert{}\vert{} '文字入力の日記', summary: content, transcript: content, category: '文字入力' };  diaries = diaries.filter(d => d.date !== selectedDateStr); diaries.unshift(newDiary); localStorage.setItem('voice_diaries', JSON.stringify(diaries));  closeModal(); renderCalendar(); renderDiaries(); }  let currentFilterDate = null;  function renderCalendar() { const titleEl = document.getElementById('calendarMonthTitle'); const gridEl = document.getElementById('calendarGrid'); gridEl.innerHTML = '';  const year = currentDate.getFullYear(); const month = currentDate.getMonth(); titleEl.innerText = `${year}年 ${month + 1}月`;  const firstDayIndex = new Date(year, month, 1).getDay(); const lastDay = new Date(year, month + 1, 0).getDate();  // 空白セル for (let i = 0; i < firstDayIndex; i++) { gridEl.appendChild(document.createElement('div')); }  for (let day = 1; day <= lastDay; day++) { const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            return `${y}-${m}-${d}`;
+        }
+
+        // 音声認識の初期化（音声モードの時だけ起動）
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return;
+            
+            if (recognition) {
+                try { recognition.abort(); } catch(e){}
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ja-JP';
+            recognition.interimResults = true;
+            recognition.continuous = true;
+
+            recognition.onresult = (event) => {
+                if (currentInputMode !== 'voice' || !isRecording) return;
+                
+                let interim = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript + ' ';
+                    } else {
+                        interim += event.results[i][0].transcript;
+                    }
+                }
+                const liveEl = document.getElementById('liveTranscript');
+                if (liveEl) {
+                    liveEl.innerText = finalTranscript + interim;
+                }
+            };
+
+            recognition.onerror = () => {};
+            recognition.onend = () => {
+                if (isRecording && currentInputMode === 'voice') {
+                    try { recognition.start(); } catch(e){}
+                }
+            };
+        }
+
+        function toggleRecording() {
+            if (currentInputMode !== 'voice') return;
+            
+            const btn = document.getElementById('recordBtn');
+            const statusText = document.getElementById('recordingStatusText');
+            
+            if (!isRecording) {
+                finalTranscript = document.getElementById('liveTranscript').innerText;
+                if (finalTranscript.includes('ここに話した内容')) finalTranscript = '';
+                
+                initSpeechRecognition();
+                try {
+                    recognition.start();
+                    isRecording = true;
+                    btn.classList.replace('bg-red-500', 'bg-amber-500');
+                    btn.innerHTML = '<i class="fa-solid fa-stop text-2xl"></i>';
+                    statusText.innerText = '録音中...（もう一度押すと一時停止）';
+                } catch(e) {}
+            } else {
+                isRecording = false;
+                if (recognition) {
+                    try { recognition.stop(); } catch(e){}
+                }
+                btn.classList.replace('bg-amber-500', 'bg-red-500');
+                btn.innerHTML = '<i class="fa-solid fa-microphone text-2xl"></i>';
+                statusText.innerText = '録音を一時停止しました（完了を押して保存できます）';
+            }
+        }
+
+        function switchInputMode(mode) {
+            currentInputMode = mode;
+            const tabVoice = document.getElementById('tabVoice');
+            const tabText = document.getElementById('tabText');
+            const voiceSec = document.getElementById('voiceModeSection');
+            const textSec = document.getElementById('textModeSection');
+
+            if (isRecording) {
+                isRecording = false;
+                if (recognition) {
+                    try { recognition.stop(); } catch(e){}
+                }
+                const btn = document.getElementById('recordBtn');
+                if (btn) {
+                    btn.classList.replace('bg-amber-500', 'bg-red-500');
+                    btn.innerHTML = '<i class="fa-solid fa-microphone text-2xl"></i>';
+                }
+            }
+
+            if (mode === 'voice') {
+                tabVoice.className = "py-2 text-xs font-bold rounded-lg transition bg-white text-indigo-600 shadow-sm";
+                tabText.className = "py-2 text-xs font-bold rounded-lg transition text-slate-600 hover:text-slate-900";
+                voiceSec.classList.remove('hidden');
+                textSec.classList.add('hidden');
+            } else {
+                tabText.className = "py-2 text-xs font-bold rounded-lg transition bg-white text-indigo-600 shadow-sm";
+                tabVoice.className = "py-2 text-xs font-bold rounded-lg transition text-slate-600 hover:text-slate-900";
+                textSec.classList.remove('hidden');
+                voiceSec.classList.add('hidden');
+            }
+        }
+
+        function openModalForDate(dateStr) {
+            selectedDateStr = dateStr;
+            document.getElementById('modalDateTitle').innerText = dateStr;
+            
+            const existing = diaries.find(d => d.date === dateStr);
+            const detailSec = document.getElementById('savedDiaryDetail');
+            const voiceSec = document.getElementById('voiceModeSection');
+            const textSec = document.getElementById('textModeSection');
+            const tabContainer = document.getElementById('modalTabContainer');
+
+            if (existing) {
+                tabContainer.classList.add('hidden');
+                voiceSec.classList.add('hidden');
+                textSec.classList.add('hidden');
+                detailSec.classList.remove('hidden');
+
+                document.getElementById('detailTitle').innerText = existing.title;
+                document.getElementById('detailSummary').innerText = existing.summary;
+                document.getElementById('detailTime').innerText = existing.time || '';
+                document.getElementById('detailTranscript').innerText = existing.transcript;
+                document.getElementById('modalCategoryBadge').innerText = existing.category || '日常';
+            } else {
+                tabContainer.classList.remove('hidden');
+                detailSec.classList.add('hidden');
+                switchInputMode('voice');
+                document.getElementById('liveTranscript').innerText = 'ここに話した内容がリアルタイムで表示されます...';
+                document.getElementById('manualTitle').value = '';
+                document.getElementById('manualContent').value = '';
+                document.getElementById('modalCategoryBadge').innerText = '新規';
+            }
+
+            document.getElementById('diaryModal').classList.remove('hidden');
+        }
+
+        function openModalForToday() {
+            openModalForDate(formatDateKey(new Date()));
+        }
+
+        function closeModal() {
+            if (isRecording) {
+                isRecording = false;
+                if (recognition) {
+                    try { recognition.stop(); } catch(e){}
+                }
+            }
+            document.getElementById('diaryModal').classList.add('hidden');
+        }
+
+        function saveVoiceDiary() {
+            const transcript = document.getElementById('liveTranscript').innerText;
+            if (!transcript || transcript.includes('ここに話した内容')) {
+                alert('音声が入力されていません。');
+                return;
+            }
+
+            const newDiary = {
+                id: Date.now(),
+                date: selectedDateStr,
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                title: transcript.slice(0, 15) + '...',
+                summary: transcript,
+                transcript: transcript,
+                category: '音声記録'
+            };
+
+            diaries = diaries.filter(d => d.date !== selectedDateStr);
+            diaries.unshift(newDiary);
+            localStorage.setItem('voice_diaries', JSON.stringify(diaries));
+
+            closeModal();
+            renderCalendar();
+            renderDiaries();
+        }
+
+        function saveManualDiary() {
+            const title = document.getElementById('manualTitle').value.trim();
+            const content = document.getElementById('manualContent').value.trim();
+
+            if (!title && !content) {
+                alert('タイトルまたは内容を入力してください。');
+                return;
+            }
+
+            const newDiary = {
+                id: Date.now(),
+                date: selectedDateStr,
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                title: title || '文字入力の日記',
+                summary: content,
+                transcript: content,
+                category: '文字入力'
+            };
+
+            diaries = diaries.filter(d => d.date !== selectedDateStr);
+            diaries.unshift(newDiary);
+            localStorage.setItem('voice_diaries', JSON.stringify(diaries));
+
+            closeModal();
+            renderCalendar();
+            renderDiaries();
+        }
+
+        let currentFilterDate = null;
+
+        function renderCalendar() {
+            const titleEl = document.getElementById('calendarMonthTitle');
+            const gridEl = document.getElementById('calendarGrid');
+            gridEl.innerHTML = '';
+
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            titleEl.innerText = `${year}年 ${month + 1}月`;
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const lastDay = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 0; i < firstDayIndex; i++) {
+                gridEl.appendChild(document.createElement('div'));
+            }
+
+            for (let day = 1; day <= lastDay; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = `h-9 w-9 mx-auto rounded-xl flex flex-col items-center justify-center text-xs font-bold transition relative ${dateStr === selectedDateStr ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}`;
@@ -230,10 +454,19 @@
                 span.innerText = day;
                 btn.appendChild(span);
 
-                // 日記が存在する日にはドットを表示
                 if (diaries.some(d => d.date === dateStr)) {
                     const dot = document.createElement('span');
-                    dot.className = `absolute bottom-1 w-1 h-1 rounded-full ${dateStr === selectedDateStr ? 'bg-white' : 'bg-indigo-600'}`; btn.appendChild(dot); }  btn.onclick = () => { currentFilterDate = dateStr; selectedDateStr = dateStr; document.getElementById('filterStatus').classList.remove('hidden'); document.getElementById('filterStatusText').innerText = `${dateStr} の日記`;
+                    dot.className = `absolute bottom-1 w-1 h-1 rounded-full ${dateStr === selectedDateStr ? 'bg-white' : 'bg-indigo-600'}`;
+                    btn.appendChild(dot);
+                }
+
+                btn.onclick = () => {
+                    currentFilterDate = dateStr;
+                    selectedDateStr = dateStr;
+                    document.getElementById('filterStatus').classList.remove('flex');
+                    document.getElementById('filterStatus').classList.remove('hidden');
+                    document.getElementById('filterStatus').style.display = 'flex';
+                    document.getElementById('filterStatusText').innerText = `${dateStr} の日記`;
                     renderCalendar();
                     renderDiaries();
                 };
@@ -244,7 +477,7 @@
 
         function clearDateFilter() {
             currentFilterDate = null;
-            document.getElementById('filterStatus').classList.add('hidden');
+            document.getElementById('filterStatus').style.display = 'none';
             renderCalendar();
             renderDiaries();
         }
@@ -263,7 +496,6 @@
                 filtered = diaries.filter(d => d.date === currentFilterDate);
             }
 
-            document.getElementById('diaryCount.innerText` // 修正
             document.getElementById('diaryCount').innerText = `${filtered.length}件`;
 
             if (filtered.length === 0) {
@@ -339,3 +571,19 @@
                     alert('ファイルの読み込みに失敗しました。');
                 }
             };
+            reader.readAsText(file);
+        }
+
+        function showHelpModal() {
+            document.getElementById('helpModal').classList.remove('hidden');
+        }
+        function closeHelpModal() {
+            document.getElementById('helpModal').classList.add('hidden');
+        }
+
+        // 初期化実行
+        renderCalendar();
+        renderDiaries();
+    </script>
+</body>
+</html>
